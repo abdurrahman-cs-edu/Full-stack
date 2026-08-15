@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesman Data Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <datalist id="designSuggestions"></datalist>
+
+    <div class="modal-overlay" id="startupPinOverlay" style="display: flex; z-index: 2000; background: rgba(15, 23, 42, 0.75);">
+        <div class="modal-card" style="max-width: 380px; text-align: center;">
+            <div class="modal-header" style="margin-bottom: 12px; justify-content: center;">
+                <h3 style="color: var(--text-dark); font-size: 1.3rem;">App Locked</h3>
+            </div>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Enter your 4-digit security PIN to open the application.</p>
+            <form id="startupPinForm" onsubmit="verifyStartupPin(event)">
+                <input type="password" id="startupPinInput" maxlength="4" placeholder="••••" style="text-align: center; font-size: 24px; letter-spacing: 8px; margin-bottom: 10px;" required autocomplete="off">
+                <div id="startupPinError" style="color: #dc2626; font-size: 13px; margin-bottom: 15px; display: none;">Incorrect PIN. Please try again.</div>
+                <button type="submit" class="add-btn" style="width: 100%;">Unlock App</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Full-Width Sticky Dark Header Section -->
+        <div class="home-header">
+            <div class="header-top">
+                <div class="header-left-group">
+                    <h2>Salesman Data Tracker</h2>
+                    <div class="today-sales-badge">
+                        <span>Today's Sales:</span>
+                        <span id="todaySalesVal">Rs. 0</span>
+                    </div>
+                </div>
+                <div class="backup-actions">
+                    <button class="backup-btn" onclick="openHistoryModal()">Sale History</button>
+                    <button class="backup-btn" onclick="exportData()" title="Download backup file">Export Backup</button>
+                    <button class="backup-btn" onclick="document.getElementById('importFile').click()" title="Restore records">Restore Data</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+            </div>
+            
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search & press Enter...">
+                </div>
+                <div class="filter-box">
+                    <select id="monthFilter" onchange="filterRecords()">
+                        <option value="">All Months</option>
+                        <option value="Jan">January</option>
+                        <option value="Feb">February</option>
+                        <option value="Mar">March</option>
+                        <option value="Apr">April</option>
+                        <option value="May">May</option>
+                        <option value="Jun">June</option>
+                        <option value="Jul">July</option>
+                        <option value="Aug" selected>August</option>
+                        <option value="Sep">September</option>
+                        <option value="Oct">October</option>
+                        <option value="Nov">November</option>
+                        <option value="Dec">December</option>
+                    </select>
+                </div>
+                
+                <button class="add-btn" onclick="openModal()">+ Add New Sale</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="recordTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date & Time</th>
+                        <th>Order Code</th>
+                        <th>Customer Name</th>
+                        <th>Design(s) Sold</th>
+                        <th>Sizes</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th>Payment Mode</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="recordBody"></tbody>
+            </table>
+        </div>
+
+        <div class="summary-wrapper">
+            <div class="summary-card" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <span style="font-size: 1rem; color: #475569;">Top 3 Best-Selling Designs:</span>
+                <div id="topDesignsList" style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%;"></div>
+            </div>
+            <div class="summary-card cod-card">
+                <span>Total COD Sales:</span>
+                <span id="codSalesAmount">Rs. 0</span>
+            </div>
+            <div class="summary-card total-card">
+                <span>Total Sales Revenue:</span>
+                <span id="totalSalesAmount">Rs. 0</span>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        All rights reserved Abdur Rahman
+    </footer>
+
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-card" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Sale History Range</h2>
+                <button class="close-modal" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-weight: 600; font-size: 14px; color: var(--text-dark);">From Date:</label>
+                    <input type="date" id="historyStart">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-weight: 600; font-size: 14px; color: var(--text-dark);">To Date:</label>
+                    <input type="date" id="historyEnd">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="edit-btn" style="flex: 1; justify-content: center;" onclick="clearHistoryFilter()">Clear Filter</button>
+                    <button type="button" class="add-btn" style="flex: 1;" onclick="applyHistoryFilter()">Apply Range</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="color: var(--text-dark);">New Sale Record</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+
+            <form id="suitForm">
+                <input type="hidden" id="editId" value="">
+
+                <div class="form-inputs">
+                    <select id="paymentType" required>
+                        <option value="" disabled selected>Select Payment Mode</option>
+                        <option value="COD">COD</option>
+                        <option value="ADP">ADP</option>
+                    </select>
+
+                    <div id="orderCodeWrapper" style="display: none;">
+                        <input type="text" id="orderCode" placeholder="Order Code (e.g. ORD-001)">
+                    </div>
+
+                    <input type="text" id="personName" placeholder="Customer / Buyer Name" required>
+                </div>
+
+                <div id="designsContainer" style="display: flex; flex-direction: column; gap: 15px; margin-top: 5px;"></div>
+
+                <button type="button" class="backup-btn" onclick="addDesignBlock()" style="width: 100%; justify-content: center; padding: 12px; border-style: dashed; background: #f8fafc; font-weight: 600; color: #4b5563; border-color: var(--border-color);">+ Add Another Design</button>
+
+                <button type="submit" class="add-btn" id="saveBtn" style="margin-top: 5px;">Save Sale</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pinModal">
+        <div class="modal-card" style="max-width: 380px; text-align: center;">
+            <div class="modal-header" style="margin-bottom: 12px;">
+                <h3 style="color: var(--text-dark); font-size: 1.2rem;">Enter Security PIN</h3>
+                <button class="close-modal" onclick="closePinModal()">&times;</button>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Enter your 4-digit security PIN to delete this record.</p>
+            <form id="pinForm" onsubmit="verifyAndDelete(event)">
+                <input type="password" id="pinInput" maxlength="4" placeholder="••••" style="text-align: center; font-size: 24px; letter-spacing: 8px; margin-bottom: 10px;" required autocomplete="off">
+                <div id="pinError" style="color: #dc2626; font-size: 13px; margin-bottom: 15px; display: none;">Incorrect PIN. Please try again.</div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="edit-btn" style="flex: 1; justify-content: center;" onclick="closePinModal()">Cancel</button>
+                    <button type="submit" class="add-btn" style="flex: 1; background: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="alertModal">
+        <div class="alert-card">
+            <h3>Search Result</h3>
+            <p id="alertMessage">No records found.</p>
+            <button class="add-btn" onclick="closeAlertModal()">OK</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
